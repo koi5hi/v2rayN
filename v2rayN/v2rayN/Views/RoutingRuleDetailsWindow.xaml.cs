@@ -1,9 +1,6 @@
-﻿using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Windows;
-using v2rayN.Base;
-using v2rayN.Mode;
-using v2rayN.ViewModels;
+using ReactiveUI;
 
 namespace v2rayN.Views
 {
@@ -13,26 +10,16 @@ namespace v2rayN.Views
         {
             InitializeComponent();
 
-            // 设置窗口的尺寸不大于屏幕的尺寸
-            if (this.Width > SystemParameters.WorkArea.Width)
-            {
-                this.Width = SystemParameters.WorkArea.Width;
-            }
-            if (this.Height > SystemParameters.WorkArea.Height)
-            {
-                this.Height = SystemParameters.WorkArea.Height;
-            }
-
             this.Owner = Application.Current.MainWindow;
             this.Loaded += Window_Loaded;
             clbProtocol.SelectionChanged += ClbProtocol_SelectionChanged;
             clbInboundTag.SelectionChanged += ClbInboundTag_SelectionChanged;
 
-            ViewModel = new RoutingRuleDetailsViewModel(rulesItem, this);
-            cmbOutboundTag.Items.Add(Global.agentTag);
-            cmbOutboundTag.Items.Add(Global.directTag);
-            cmbOutboundTag.Items.Add(Global.blockTag);
-            Global.Protocols.ForEach(it =>
+            ViewModel = new RoutingRuleDetailsViewModel(rulesItem, UpdateViewHandler);
+            cmbOutboundTag.Items.Add(Global.ProxyTag);
+            cmbOutboundTag.Items.Add(Global.DirectTag);
+            cmbOutboundTag.Items.Add(Global.BlockTag);
+            Global.RuleProtocols.ForEach(it =>
             {
                 clbProtocol.Items.Add(it);
             });
@@ -40,14 +27,18 @@ namespace v2rayN.Views
             {
                 clbInboundTag.Items.Add(it);
             });
-
-            if (!rulesItem.id.IsNullOrEmpty())
+            Global.RuleNetworks.ForEach(it =>
             {
-                rulesItem.protocol?.ForEach(it =>
+                cmbNetwork.Items.Add(it);
+            });
+
+            if (!rulesItem.Id.IsNullOrEmpty())
+            {
+                rulesItem.Protocol?.ForEach(it =>
                 {
                     clbProtocol.SelectedItems.Add(it);
                 });
-                rulesItem.inboundTag?.ForEach(it =>
+                rulesItem.InboundTag?.ForEach(it =>
                 {
                     clbInboundTag.SelectedItems.Add(it);
                 });
@@ -55,9 +46,11 @@ namespace v2rayN.Views
 
             this.WhenActivated(disposables =>
             {
-                this.Bind(ViewModel, vm => vm.SelectedSource.outboundTag, v => v.cmbOutboundTag.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.port, v => v.txtPort.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.enabled, v => v.togEnabled.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.OutboundTag, v => v.cmbOutboundTag.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Port, v => v.txtPort.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Network, v => v.cmbNetwork.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Enabled, v => v.togEnabled.IsChecked).DisposeWith(disposables);
                 this.Bind(ViewModel, vm => vm.Domain, v => v.txtDomain.Text).DisposeWith(disposables);
                 this.Bind(ViewModel, vm => vm.IP, v => v.txtIP.Text).DisposeWith(disposables);
                 this.Bind(ViewModel, vm => vm.Process, v => v.txtProcess.Text).DisposeWith(disposables);
@@ -65,6 +58,18 @@ namespace v2rayN.Views
 
                 this.BindCommand(ViewModel, vm => vm.SaveCmd, v => v.btnSave).DisposeWith(disposables);
             });
+            WindowsUtils.SetDarkBorder(this, AppHandler.Instance.Config.UiItem.CurrentTheme);
+        }
+
+        private async Task<bool> UpdateViewHandler(EViewAction action, object? obj)
+        {
+            switch (action)
+            {
+                case EViewAction.CloseWindow:
+                    this.DialogResult = true;
+                    break;
+            }
+            return await Task.FromResult(true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -82,14 +87,9 @@ namespace v2rayN.Views
             ViewModel.InboundTagItems = clbInboundTag.SelectedItems.Cast<string>().ToList();
         }
 
-        private void btnCancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-
         private void linkRuleobjectDoc_Click(object sender, RoutedEventArgs e)
         {
-            Utils.ProcessStart("https://www.v2fly.org/config/routing.html#ruleobject");
+            ProcUtils.ProcessStart("https://xtls.github.io/config/routing.html#ruleobject");
         }
     }
 }

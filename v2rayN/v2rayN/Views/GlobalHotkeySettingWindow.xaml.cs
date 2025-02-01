@@ -1,10 +1,8 @@
-﻿using System.Text;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using v2rayN.Handler;
-using v2rayN.Mode;
-using v2rayN.Resx;
 
 namespace v2rayN.Views
 {
@@ -17,19 +15,12 @@ namespace v2rayN.Views
         {
             InitializeComponent();
 
-            // 设置窗口的尺寸不大于屏幕的尺寸
-            if (this.Width > SystemParameters.WorkArea.Width)
-            {
-                this.Width = SystemParameters.WorkArea.Width;
-            }
-            if (this.Height > SystemParameters.WorkArea.Height)
-            {
-                this.Height = SystemParameters.WorkArea.Height;
-            }
-
             this.Owner = Application.Current.MainWindow;
-            _config = LazyConfig.Instance.GetConfig();
-            _config.globalHotkeys ??= new List<KeyEventItem>();
+            _config = AppHandler.Instance.Config;
+            _config.GlobalHotkeys ??= new List<KeyEventItem>();
+
+            btnReset.Click += btnReset_Click;
+            btnSave.Click += btnSave_ClickAsync;
 
             txtGlobalHotkey0.KeyDown += TxtGlobalHotkey_PreviewKeyDown;
             txtGlobalHotkey1.KeyDown += TxtGlobalHotkey_PreviewKeyDown;
@@ -39,7 +30,7 @@ namespace v2rayN.Views
 
             HotkeyHandler.Instance.IsPause = true;
             this.Closing += (s, e) => HotkeyHandler.Instance.IsPause = false;
-            Utils.SetDarkBorder(this, _config.uiItem.colorModeDark);
+            WindowsUtils.SetDarkBorder(this, _config.UiItem.CurrentTheme);
             InitData();
         }
 
@@ -47,11 +38,11 @@ namespace v2rayN.Views
         {
             _TextBoxKeyEventItem = new()
             {
-                { txtGlobalHotkey0,GetKeyEventItemByEGlobalHotkey(_config.globalHotkeys,EGlobalHotkey.ShowForm) },
-                { txtGlobalHotkey1,GetKeyEventItemByEGlobalHotkey(_config.globalHotkeys,EGlobalHotkey.SystemProxyClear) },
-                { txtGlobalHotkey2,GetKeyEventItemByEGlobalHotkey(_config.globalHotkeys,EGlobalHotkey.SystemProxySet) },
-                { txtGlobalHotkey3,GetKeyEventItemByEGlobalHotkey(_config.globalHotkeys,EGlobalHotkey.SystemProxyUnchanged)},
-                { txtGlobalHotkey4,GetKeyEventItemByEGlobalHotkey(_config.globalHotkeys,EGlobalHotkey.SystemProxyPac)}
+                { txtGlobalHotkey0,GetKeyEventItemByEGlobalHotkey(_config.GlobalHotkeys,EGlobalHotkey.ShowForm) },
+                { txtGlobalHotkey1,GetKeyEventItemByEGlobalHotkey(_config.GlobalHotkeys,EGlobalHotkey.SystemProxyClear) },
+                { txtGlobalHotkey2,GetKeyEventItemByEGlobalHotkey(_config.GlobalHotkeys,EGlobalHotkey.SystemProxySet) },
+                { txtGlobalHotkey3,GetKeyEventItemByEGlobalHotkey(_config.GlobalHotkeys,EGlobalHotkey.SystemProxyUnchanged)},
+                { txtGlobalHotkey4,GetKeyEventItemByEGlobalHotkey(_config.GlobalHotkeys,EGlobalHotkey.SystemProxyPac)}
             };
             BindingData();
         }
@@ -61,18 +52,18 @@ namespace v2rayN.Views
             e.Handled = true;
             var _ModifierKeys = new Key[] { Key.LeftCtrl, Key.RightCtrl, Key.LeftShift,
                 Key.RightShift, Key.LeftAlt, Key.RightAlt, Key.LWin, Key.RWin};
-            _TextBoxKeyEventItem[sender].KeyCode = e.Key == Key.System ? (_ModifierKeys.Contains(e.SystemKey) ? Key.None : e.SystemKey) : (_ModifierKeys.Contains(e.Key) ? Key.None : e.Key);
+            _TextBoxKeyEventItem[sender].KeyCode = (int)(e.Key == Key.System ? (_ModifierKeys.Contains(e.SystemKey) ? Key.None : e.SystemKey) : (_ModifierKeys.Contains(e.Key) ? Key.None : e.Key));
             _TextBoxKeyEventItem[sender].Alt = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
             _TextBoxKeyEventItem[sender].Control = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
             _TextBoxKeyEventItem[sender].Shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
             (sender as TextBox)!.Text = KeyEventItemToString(_TextBoxKeyEventItem[sender]);
         }
 
-        private KeyEventItem GetKeyEventItemByEGlobalHotkey(List<KeyEventItem> KELsit, EGlobalHotkey eg)
+        private KeyEventItem GetKeyEventItemByEGlobalHotkey(List<KeyEventItem> KEList, EGlobalHotkey eg)
         {
-            return Utils.DeepCopy(KELsit.Find((it) => it.eGlobalHotkey == eg) ?? new()
+            return JsonUtils.DeepCopy(KEList.Find((it) => it.EGlobalHotkey == eg) ?? new()
             {
-                eGlobalHotkey = eg,
+                EGlobalHotkey = eg,
                 Control = false,
                 Alt = false,
                 Shift = false,
@@ -84,11 +75,14 @@ namespace v2rayN.Views
         {
             var res = new StringBuilder();
 
-            if (item.Control) res.Append($"{ModifierKeys.Control}+");
-            if (item.Shift) res.Append($"{ModifierKeys.Shift}+");
-            if (item.Alt) res.Append($"{ModifierKeys.Alt}+");
-            if (item.KeyCode != null && item.KeyCode != Key.None)
-                res.Append($"{item.KeyCode}");
+            if (item.Control)
+                res.Append($"{ModifierKeys.Control}+");
+            if (item.Shift)
+                res.Append($"{ModifierKeys.Shift}+");
+            if (item.Alt)
+                res.Append($"{ModifierKeys.Alt}+");
+            if (item.KeyCode != null && (Key)item.KeyCode != Key.None)
+                res.Append($"{(Key)item.KeyCode}");
 
             return res.ToString();
         }
@@ -97,7 +91,7 @@ namespace v2rayN.Views
         {
             foreach (var item in _TextBoxKeyEventItem)
             {
-                if (item.Value.KeyCode != null && item.Value.KeyCode != Key.None)
+                if (item.Value.KeyCode != null && (Key)item.Value.KeyCode != Key.None)
                 {
                     (item.Key as TextBox)!.Text = KeyEventItemToString(item.Value);
                 }
@@ -108,24 +102,19 @@ namespace v2rayN.Views
             }
         }
 
-        private void btnSave_Click(object sender, RoutedEventArgs e)
+        private async void btnSave_ClickAsync(object sender, RoutedEventArgs e)
         {
-            _config.globalHotkeys = _TextBoxKeyEventItem.Values.ToList();
+            _config.GlobalHotkeys = _TextBoxKeyEventItem.Values.ToList();
 
-            if (ConfigHandler.SaveConfig(ref _config, false) == 0)
+            if (await ConfigHandler.SaveConfig(_config) == 0)
             {
                 HotkeyHandler.Instance.ReLoad();
                 this.DialogResult = true;
             }
             else
             {
-                UI.ShowWarning(ResUI.OperationFailed);
+                UI.Show(ResUI.OperationFailed);
             }
-        }
-
-        private void btnCancel_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
         }
 
         private void btnReset_Click(object sender, RoutedEventArgs e)
@@ -135,7 +124,7 @@ namespace v2rayN.Views
                 _TextBoxKeyEventItem[k].Alt = false;
                 _TextBoxKeyEventItem[k].Control = false;
                 _TextBoxKeyEventItem[k].Shift = false;
-                _TextBoxKeyEventItem[k].KeyCode = Key.None;
+                _TextBoxKeyEventItem[k].KeyCode = (int)Key.None;
             }
             BindingData();
         }

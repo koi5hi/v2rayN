@@ -1,11 +1,9 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using v2rayN.Mode;
-using v2rayN.Resx;
 
 namespace v2rayN.Handler
 {
@@ -18,7 +16,7 @@ namespace v2rayN.Handler
 
         private Config _config
         {
-            get => LazyConfig.Instance.GetConfig();
+            get => AppHandler.Instance.Config;
         }
 
         private Dictionary<int, List<EGlobalHotkey>> _hotkeyTriggerDic;
@@ -39,25 +37,29 @@ namespace v2rayN.Handler
         private void Init()
         {
             _hotkeyTriggerDic.Clear();
-            if (_config.globalHotkeys == null) return;
-            foreach (var item in _config.globalHotkeys)
+            if (_config.GlobalHotkeys == null)
+                return;
+            foreach (var item in _config.GlobalHotkeys)
             {
-                if (item.KeyCode != null && item.KeyCode != Key.None)
+                if (item.KeyCode != null && (Key)item.KeyCode != Key.None)
                 {
                     int key = KeyInterop.VirtualKeyFromKey((Key)item.KeyCode);
                     KeyModifiers modifiers = KeyModifiers.None;
-                    if (item.Control) modifiers |= KeyModifiers.Ctrl;
-                    if (item.Shift) modifiers |= KeyModifiers.Shift;
-                    if (item.Alt) modifiers |= KeyModifiers.Alt;
+                    if (item.Control)
+                        modifiers |= KeyModifiers.Ctrl;
+                    if (item.Shift)
+                        modifiers |= KeyModifiers.Shift;
+                    if (item.Alt)
+                        modifiers |= KeyModifiers.Alt;
                     key = (key << 16) | (int)modifiers;
                     if (!_hotkeyTriggerDic.ContainsKey(key))
                     {
-                        _hotkeyTriggerDic.Add(key, new() { item.eGlobalHotkey });
+                        _hotkeyTriggerDic.Add(key, new() { item.EGlobalHotkey });
                     }
                     else
                     {
-                        if (!_hotkeyTriggerDic[key].Contains(item.eGlobalHotkey))
-                            _hotkeyTriggerDic[key].Add(item.eGlobalHotkey);
+                        if (!_hotkeyTriggerDic[key].Contains(item.EGlobalHotkey))
+                            _hotkeyTriggerDic[key].Add(item.EGlobalHotkey);
                     }
                 }
             }
@@ -71,7 +73,7 @@ namespace v2rayN.Handler
                 bool isSuccess = false;
                 string msg;
 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     isSuccess = RegisterHotKey(IntPtr.Zero, _hotkeyCode, hotkeyInfo.fsModifiers, hotkeyInfo.vKey);
                 });
@@ -95,7 +97,7 @@ namespace v2rayN.Handler
         {
             foreach (var hotkey in _hotkeyTriggerDic.Keys)
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     UnregisterHotKey(IntPtr.Zero, hotkey);
                 });
@@ -113,9 +115,12 @@ namespace v2rayN.Handler
 
             var mdif = (KeyModifiers)_fsModifiers;
             var key = KeyInterop.KeyFromVirtualKey(_vkey);
-            if ((mdif & KeyModifiers.Ctrl) == KeyModifiers.Ctrl) _hotkeyStr.Append($"{KeyModifiers.Ctrl}+");
-            if ((mdif & KeyModifiers.Alt) == KeyModifiers.Alt) _hotkeyStr.Append($"{KeyModifiers.Alt}+");
-            if ((mdif & KeyModifiers.Shift) == KeyModifiers.Shift) _hotkeyStr.Append($"{KeyModifiers.Shift}+");
+            if ((mdif & KeyModifiers.Ctrl) == KeyModifiers.Ctrl)
+                _hotkeyStr.Append($"{KeyModifiers.Ctrl}+");
+            if ((mdif & KeyModifiers.Alt) == KeyModifiers.Alt)
+                _hotkeyStr.Append($"{KeyModifiers.Alt}+");
+            if ((mdif & KeyModifiers.Shift) == KeyModifiers.Shift)
+                _hotkeyStr.Append($"{KeyModifiers.Shift}+");
             _hotkeyStr.Append(key.ToString());
 
             foreach (var name in _hotkeyTriggerDic[hotkeycode])
@@ -136,7 +141,7 @@ namespace v2rayN.Handler
             var _hotKeyCode = (int)msg.lParam;
             if (IsPause)
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     UIElement? element = Keyboard.FocusedElement as UIElement;
                     if (element != null)
