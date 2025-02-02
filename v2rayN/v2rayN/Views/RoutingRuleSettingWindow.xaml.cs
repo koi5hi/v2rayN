@@ -1,10 +1,7 @@
-﻿using Microsoft.Win32;
-using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Windows;
 using System.Windows.Input;
-using v2rayN.Mode;
-using v2rayN.ViewModels;
+using ReactiveUI;
 
 namespace v2rayN.Views
 {
@@ -14,29 +11,22 @@ namespace v2rayN.Views
         {
             InitializeComponent();
 
-            // 设置窗口的尺寸不大于屏幕的尺寸
-            if (this.Width > SystemParameters.WorkArea.Width)
-            {
-                this.Width = SystemParameters.WorkArea.Width;
-            }
-            if (this.Height > SystemParameters.WorkArea.Height)
-            {
-                this.Height = SystemParameters.WorkArea.Height;
-            }
-
             this.Owner = Application.Current.MainWindow;
             this.Loaded += Window_Loaded;
             this.PreviewKeyDown += RoutingRuleSettingWindow_PreviewKeyDown;
             lstRules.SelectionChanged += lstRules_SelectionChanged;
             lstRules.MouseDoubleClick += LstRules_MouseDoubleClick;
+            menuRuleSelectAll.Click += menuRuleSelectAll_Click;
+            btnBrowseCustomIcon.Click += btnBrowseCustomIcon_Click;
+            btnBrowseCustomRulesetPath4Singbox.Click += btnBrowseCustomRulesetPath4Singbox_Click;
 
-            ViewModel = new RoutingRuleSettingViewModel(routingItem, this);
-            Global.domainStrategys.ForEach(it =>
+            ViewModel = new RoutingRuleSettingViewModel(routingItem, UpdateViewHandler);
+            Global.DomainStrategies.ForEach(it =>
             {
                 cmbdomainStrategy.Items.Add(it);
             });
             cmbdomainStrategy.Items.Add(string.Empty);
-            Global.domainStrategys4Singbox.ForEach(it =>
+            Global.DomainStrategies4Singbox.ForEach(it =>
             {
                 cmbdomainStrategy4Singbox.Items.Add(it);
             });
@@ -46,13 +36,14 @@ namespace v2rayN.Views
                 this.OneWayBind(ViewModel, vm => vm.RulesItems, v => v.lstRules.ItemsSource).DisposeWith(disposables);
                 this.Bind(ViewModel, vm => vm.SelectedSource, v => v.lstRules.SelectedItem).DisposeWith(disposables);
 
-                this.Bind(ViewModel, vm => vm.SelectedRouting.remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedRouting.domainStrategy, v => v.cmbdomainStrategy.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedRouting.domainStrategy4Singbox, v => v.cmbdomainStrategy4Singbox.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.Remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.DomainStrategy, v => v.cmbdomainStrategy.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.DomainStrategy4Singbox, v => v.cmbdomainStrategy4Singbox.Text).DisposeWith(disposables);
 
-                this.Bind(ViewModel, vm => vm.SelectedRouting.url, v => v.txtUrl.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedRouting.customIcon, v => v.txtCustomIcon.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedRouting.sort, v => v.txtSort.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.Url, v => v.txtUrl.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.CustomIcon, v => v.txtCustomIcon.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.CustomRulesetPath4Singbox, v => v.txtCustomRulesetPath4Singbox.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedRouting.Sort, v => v.txtSort.Text).DisposeWith(disposables);
 
                 this.BindCommand(ViewModel, vm => vm.RuleAddCmd, v => v.menuRuleAdd).DisposeWith(disposables);
                 this.BindCommand(ViewModel, vm => vm.ImportRulesFromFileCmd, v => v.menuImportRulesFromFile).DisposeWith(disposables);
@@ -69,6 +60,61 @@ namespace v2rayN.Views
 
                 this.BindCommand(ViewModel, vm => vm.SaveCmd, v => v.btnSave).DisposeWith(disposables);
             });
+            WindowsUtils.SetDarkBorder(this, AppHandler.Instance.Config.UiItem.CurrentTheme);
+        }
+
+        private async Task<bool> UpdateViewHandler(EViewAction action, object? obj)
+        {
+            switch (action)
+            {
+                case EViewAction.CloseWindow:
+                    this.DialogResult = true;
+                    break;
+
+                case EViewAction.ShowYesNo:
+
+                    if (UI.ShowYesNo(ResUI.RemoveServer) == MessageBoxResult.No)
+                    {
+                        return false;
+                    }
+                    break;
+
+                case EViewAction.AddBatchRoutingRulesYesNo:
+
+                    if (UI.ShowYesNo(ResUI.AddBatchRoutingRulesYesNo) == MessageBoxResult.No)
+                    {
+                        return false;
+                    }
+                    break;
+
+                case EViewAction.RoutingRuleDetailsWindow:
+
+                    if (obj is null)
+                        return false;
+                    return (new RoutingRuleDetailsWindow((RulesItem)obj)).ShowDialog() ?? false;
+
+                case EViewAction.ImportRulesFromFile:
+
+                    if (UI.OpenFileDialog(out string fileName, "Rules|*.json|All|*.*") != true)
+                    {
+                        return false;
+                    }
+                    ViewModel?.ImportRulesFromFileAsync(fileName);
+                    break;
+
+                case EViewAction.SetClipboardData:
+                    if (obj is null)
+                        return false;
+                    WindowsUtils.SetClipboardData((string)obj);
+                    break;
+
+                case EViewAction.ImportRulesFromClipboard:
+                    var clipboardData = WindowsUtils.GetClipboardData();
+                    ViewModel?.ImportRulesFromClipboardAsync(clipboardData);
+                    break;
+            }
+
+            return await Task.FromResult(true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -86,7 +132,7 @@ namespace v2rayN.Views
                 }
                 else if (e.Key == Key.C)
                 {
-                    ViewModel?.RuleExportSelected();
+                    ViewModel?.RuleExportSelectedAsync();
                 }
             }
             else
@@ -109,7 +155,7 @@ namespace v2rayN.Views
                 }
                 else if (e.Key == Key.Delete)
                 {
-                    ViewModel?.RuleRemove();
+                    ViewModel?.RuleRemoveAsync();
                 }
             }
         }
@@ -121,7 +167,7 @@ namespace v2rayN.Views
 
         private void LstRules_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            ViewModel?.RuleEdit(false);
+            ViewModel?.RuleEditAsync(false);
         }
 
         private void menuRuleSelectAll_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -129,13 +175,31 @@ namespace v2rayN.Views
             lstRules.SelectAll();
         }
 
-        private void btnBrowse_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void btnBrowseCustomIcon_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            var openFileDialog1 = new OpenFileDialog();
-            openFileDialog1.Filter = "PNG|*.png";
-            openFileDialog1.ShowDialog();
+            if (UI.OpenFileDialog(out string fileName,
+                "PNG,ICO|*.png;*.ico") != true)
+            {
+                return;
+            }
 
-            txtCustomIcon.Text = openFileDialog1.FileName;
+            txtCustomIcon.Text = fileName;
+        }
+
+        private void btnBrowseCustomRulesetPath4Singbox_Click(object sender, RoutedEventArgs e)
+        {
+            if (UI.OpenFileDialog(out string fileName,
+                  "Config|*.json|All|*.*") != true)
+            {
+                return;
+            }
+
+            txtCustomRulesetPath4Singbox.Text = fileName;
+        }
+
+        private void linkCustomRulesetPath4Singbox(object sender, RoutedEventArgs e)
+        {
+            ProcUtils.ProcessStart("https://github.com/2dust/v2rayCustomRoutingList/blob/master/singbox_custom_ruleset_example.json");
         }
     }
 }

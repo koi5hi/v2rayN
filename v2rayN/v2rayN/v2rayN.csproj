@@ -1,122 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net6.0-windows</TargetFramework>
-		<Nullable>enable</Nullable>
-		<UseWPF>true</UseWPF>  
+		<TargetFramework>net8.0-windows10.0.17763</TargetFramework>
+		<GenerateSatelliteAssembliesForCore>true</GenerateSatelliteAssembliesForCore>
+		<UseWPF>true</UseWPF>
+		<ApplicationIcon>Resources\v2rayN.ico</ApplicationIcon>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<ApplicationIcon>v2rayN.ico</ApplicationIcon>
-		<Copyright>Copyright © 2017-2023 (GPLv3)</Copyright>
-		<FileVersion>6.29</FileVersion>
+		<SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Downloader" Version="3.0.6" />		
-		<PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
-		<PackageReference Include="H.NotifyIcon.Wpf" Version="2.0.118" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="QRCoder.Xaml" Version="1.4.3" />
-		<PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
-		<PackageReference Include="TaskScheduler" Version="2.10.1" /> 
-		<PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.12" />
-		<PackageReference Include="ReactiveUI.Fody" Version="19.5.1" />
-		<PackageReference Include="ReactiveUI.Validation" Version="3.1.7" />
-		<PackageReference Include="ReactiveUI.WPF" Version="19.5.1" />
-		<PackageReference Include="Splat.NLog" Version="14.8.6" />
-		<PackageReference Include="System.Reactive" Version="6.0.0" />
-	</ItemGroup>
-	
-	<ItemGroup>       
-        <AdditionalFiles Include="app.manifest" />       
-        <EmbeddedResource Include="Sample\SingboxSampleClientConfig">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-		<EmbeddedResource Include="Sample\tun_singbox_dns">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Sample\custom_routing_black">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\custom_routing_global">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\custom_routing_locked">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\custom_routing_rules">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\custom_routing_white">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\SampleClientConfig">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\SampleHttprequest">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\SampleHttpresponse">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\SampleInbound">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\tun_singbox_rules">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="Sample\tun_singbox_inbound">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-		<EmbeddedResource Include="Sample\dns_v2ray_normal">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Sample\dns_singbox_normal">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>  
-        <EmbeddedResource Include="v2rayN.ico">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        </EmbeddedResource>
-        <Resource Include="Resources\NotifyIcon1.ico" />
-        <Resource Include="Resources\NotifyIcon2.ico" />
-        <Resource Include="Resources\NotifyIcon3.ico" />
-        <Resource Include="v2rayN.ico">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </Resource>
-    </ItemGroup> 	 
-	
-	<ItemGroup>
-	  <ProjectReference Include="..\PacLib\PacLib.csproj" />
-	  <ProjectReference Include="..\ProtosLib\ProtosLib.csproj" />
+		<PackageReference Include="MaterialDesignThemes" />
+		<PackageReference Include="H.NotifyIcon.Wpf" />
+		<PackageReference Include="ReactiveUI.Fody">
+			<TreatAsUsed>true</TreatAsUsed>
+		</PackageReference>
+		<PackageReference Include="ReactiveUI.WPF" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Update="Resx\ResUI.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>ResUI.resx</DependentUpon>
-		</Compile>		
+		<AdditionalFiles Include="app.manifest" />
+		<EmbeddedResource Include="Resources\v2rayN.ico">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<Resource Include="Resources\NotifyIcon1.ico" />
+		<Resource Include="Resources\NotifyIcon2.ico" />
+		<Resource Include="Resources\NotifyIcon3.ico" />
+		<Resource Include="Resources\NotifyIcon4.ico" />
+		<Resource Include="Resources\v2rayN.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <EmbeddedResource Update="Resx\ResUI.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	    <LastGenOutput>ResUI.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resx\ResUI.zh-Hans.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resx\ResUI.zh-Hant.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resx\ResUI.fa-Ir.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	  </EmbeddedResource>
-	  <EmbeddedResource Update="Resx\ResUI.ru.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	  </EmbeddedResource>
+		<ProjectReference Include="..\ServiceLib\ServiceLib.csproj" />
 	</ItemGroup>
 
 </Project>

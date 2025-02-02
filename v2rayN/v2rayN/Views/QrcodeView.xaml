@@ -5,11 +5,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:v2rayN.Resx"
+    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     d:DesignHeight="300"
     d:DesignWidth="300"
+    Style="{StaticResource ViewGlobal}"
     mc:Ignorable="d">
-    <Grid Margin="30">
+    <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -37,12 +38,12 @@
         <Button
             Grid.Row="2"
             Width="100"
-            Margin="8"
+            Margin="{StaticResource Margin8}"
             HorizontalAlignment="Right"
             Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
-            Content="{x:Static resx:ResUI.TbConfirm}"
+            Content="{x:Static resx:ResUI.menuClose}"
             IsCancel="True"
             IsDefault="True"
-            Style="{StaticResource MaterialDesignFlatButton}" />
+            Style="{StaticResource DefButton}" />
     </Grid>
 </UserControl>

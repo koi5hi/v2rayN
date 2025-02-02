@@ -1,89 +1,67 @@
-using ReactiveUI;
-using System.Reactive.Linq;
-using System.Text.RegularExpressions;
+using System.Reactive.Disposables;
+using System.Windows;
 using System.Windows.Threading;
-using v2rayN.Base;
-using v2rayN.Handler;
-using v2rayN.Mode;
+using ReactiveUI;
 
 namespace v2rayN.Views
 {
     public partial class MsgView
     {
-        private static Config _config;
-
-        private string lastMsgFilter;
-        private bool lastMsgFilterNotAvailable;
-
         public MsgView()
         {
             InitializeComponent();
-            _config = LazyConfig.Instance.GetConfig();
-            MessageBus.Current.Listen<string>("MsgView").Subscribe(x => DelegateAppendText(x));
+
+            ViewModel = new MsgViewModel(UpdateViewHandler);
+
+            this.WhenActivated(disposables =>
+            {
+                this.Bind(ViewModel, vm => vm.MsgFilter, v => v.cmbMsgFilter.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.AutoRefresh, v => v.togAutoRefresh.IsChecked).DisposeWith(disposables);
+            });
+
+            btnCopy.Click += menuMsgViewCopyAll_Click;
+            btnClear.Click += menuMsgViewClear_Click;
+            menuMsgViewSelectAll.Click += menuMsgViewSelectAll_Click;
+            menuMsgViewCopy.Click += menuMsgViewCopy_Click;
+            menuMsgViewCopyAll.Click += menuMsgViewCopyAll_Click;
+            menuMsgViewClear.Click += menuMsgViewClear_Click;
+
             Global.PresetMsgFilters.ForEach(it =>
             {
                 cmbMsgFilter.Items.Add(it);
             });
-            if (!_config.uiItem.mainMsgFilter.IsNullOrEmpty())
-            {
-                cmbMsgFilter.Text = _config.uiItem.mainMsgFilter;
-            }
         }
 
-        private void DelegateAppendText(string msg)
+        private async Task<bool> UpdateViewHandler(EViewAction action, object? obj)
         {
-            Dispatcher.BeginInvoke(AppendText, DispatcherPriority.Send, msg);
-        }
-
-        public void AppendText(string msg)
-        {
-            if (msg == Global.CommandClearMsg)
+            switch (action)
             {
-                ClearMsg();
-                return;
-            }
-            if (togAutoRefresh.IsChecked == false)
-            {
-                return;
-            }
-
-            var MsgFilter = cmbMsgFilter.Text.TrimEx();
-            if (MsgFilter != lastMsgFilter) lastMsgFilterNotAvailable = false;
-            if (!string.IsNullOrEmpty(MsgFilter) && !lastMsgFilterNotAvailable)
-            {
-                try
-                {
-                    if (!Regex.IsMatch(msg, MsgFilter)) // 如果不是正则表达式会异常
+                case EViewAction.DispatcherShowMsg:
+                    if (obj is null)
+                        return false;
+                    Application.Current?.Dispatcher.Invoke((() =>
                     {
-                        return;
-                    }
-                }
-                catch (Exception)
-                {
-                    lastMsgFilterNotAvailable = true;
-                }
+                        ShowMsg(obj);
+                    }), DispatcherPriority.ApplicationIdle);
+                    break;
             }
-            lastMsgFilter = MsgFilter;
-
-            ShowMsg(msg);
+            return await Task.FromResult(true);
         }
 
-        private void ShowMsg(string msg)
+        private void ShowMsg(object msg)
         {
-            if (txtMsg.LineCount > 999)
+            txtMsg.BeginChange();
+            txtMsg.Text = msg.ToString();
+            if (togScrollToEnd.IsChecked ?? true)
             {
-                ClearMsg();
+                txtMsg.ScrollToEnd();
             }
-            this.txtMsg.AppendText(msg);
-            if (!msg.EndsWith(Environment.NewLine))
-            {
-                this.txtMsg.AppendText(Environment.NewLine);
-            }
-            txtMsg.ScrollToEnd();
+            txtMsg.EndChange();
         }
 
         public void ClearMsg()
         {
+            ViewModel?.ClearMsg();
             txtMsg.Clear();
         }
 
@@ -96,23 +74,18 @@ namespace v2rayN.Views
         private void menuMsgViewCopy_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var data = txtMsg.SelectedText.TrimEx();
-            Utils.SetClipboardData(data);
+            WindowsUtils.SetClipboardData(data);
         }
 
         private void menuMsgViewCopyAll_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var data = txtMsg.Text;
-            Utils.SetClipboardData(data);
+            WindowsUtils.SetClipboardData(data);
         }
 
         private void menuMsgViewClear_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ClearMsg();
-        }
-
-        private void cmbMsgFilter_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            _config.uiItem.mainMsgFilter = cmbMsgFilter.Text.TrimEx();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Windows.Media;
-using v2rayN.Handler;
 
 namespace v2rayN.Converters
 {
@@ -11,8 +10,8 @@ namespace v2rayN.Converters
         {
             try
             {
-                var fontFamily = LazyConfig.Instance.GetConfig().uiItem.currentFontFamily;
-                if (!string.IsNullOrEmpty(fontFamily))
+                var fontFamily = AppHandler.Instance.Config.UiItem.CurrentFontFamily;
+                if (Utils.IsNotEmpty(fontFamily))
                 {
                     var fontPath = Utils.GetFontsPath();
                     MyFont = new FontFamily(new Uri(@$"file:///{fontPath}\"), $"./#{fontFamily}");

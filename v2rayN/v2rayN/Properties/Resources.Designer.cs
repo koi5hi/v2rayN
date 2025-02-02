@@ -151,6 +151,16 @@ namespace v2rayN.Properties {
         }
         
         /// <summary>
+        ///   查找类似于 (图标) 的 System.Drawing.Icon 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Icon NotifyIcon4 {
+            get {
+                object obj = ResourceManager.GetObject("NotifyIcon4", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
         internal static System.Drawing.Bitmap option {
@@ -217,26 +227,6 @@ namespace v2rayN.Properties {
             get {
                 object obj = ResourceManager.GetObject("sub", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Byte[] 类型的本地化资源。
-        /// </summary>
-        internal static byte[] sysproxy_exe {
-            get {
-                object obj = ResourceManager.GetObject("sysproxy_exe", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Byte[] 类型的本地化资源。
-        /// </summary>
-        internal static byte[] sysproxy64_exe {
-            get {
-                object obj = ResourceManager.GetObject("sysproxy64_exe", resourceCulture);
-                return ((byte[])(obj));
             }
         }
     }

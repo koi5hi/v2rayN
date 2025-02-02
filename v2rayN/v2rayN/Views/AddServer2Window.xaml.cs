@@ -1,8 +1,6 @@
-﻿using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Windows;
-using v2rayN.Mode;
-using v2rayN.ViewModels;
+using ReactiveUI;
 
 namespace v2rayN.Views
 {
@@ -12,19 +10,9 @@ namespace v2rayN.Views
         {
             InitializeComponent();
 
-            // 设置窗口的尺寸不大于屏幕的尺寸
-            if (this.Width > SystemParameters.WorkArea.Width)
-            {
-                this.Width = SystemParameters.WorkArea.Width;
-            }
-            if (this.Height > SystemParameters.WorkArea.Height)
-            {
-                this.Height = SystemParameters.WorkArea.Height;
-            }
-
             this.Owner = Application.Current.MainWindow;
             this.Loaded += Window_Loaded;
-            ViewModel = new AddServer2ViewModel(profileItem, this);
+            ViewModel = new AddServer2ViewModel(profileItem, UpdateViewHandler);
 
             foreach (ECoreType it in Enum.GetValues(typeof(ECoreType)))
             {
@@ -36,33 +24,42 @@ namespace v2rayN.Views
 
             this.WhenActivated(disposables =>
             {
-                this.Bind(ViewModel, vm => vm.SelectedSource.remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.address, v => v.txtAddress.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.coreType, v => v.cmbCoreType.Text).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.displayLog, v => v.togDisplayLog.IsChecked).DisposeWith(disposables);
-                this.Bind(ViewModel, vm => vm.SelectedSource.preSocksPort, v => v.txtPreSocksPort.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.Address, v => v.txtAddress.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.CoreType, v => v.cmbCoreType.Text).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.DisplayLog, v => v.togDisplayLog.IsChecked).DisposeWith(disposables);
+                this.Bind(ViewModel, vm => vm.SelectedSource.PreSocksPort, v => v.txtPreSocksPort.Text).DisposeWith(disposables);
 
                 this.BindCommand(ViewModel, vm => vm.BrowseServerCmd, v => v.btnBrowse).DisposeWith(disposables);
                 this.BindCommand(ViewModel, vm => vm.EditServerCmd, v => v.btnEdit).DisposeWith(disposables);
                 this.BindCommand(ViewModel, vm => vm.SaveServerCmd, v => v.btnSave).DisposeWith(disposables);
             });
+            WindowsUtils.SetDarkBorder(this, AppHandler.Instance.Config.UiItem.CurrentTheme);
+        }
+
+        private async Task<bool> UpdateViewHandler(EViewAction action, object? obj)
+        {
+            switch (action)
+            {
+                case EViewAction.CloseWindow:
+                    this.DialogResult = true;
+                    break;
+
+                case EViewAction.BrowseServer:
+                    if (UI.OpenFileDialog(out string fileName, "Config|*.json|YAML|*.yaml;*.yml|All|*.*") != true)
+                    {
+                        return false;
+                    }
+                    ViewModel?.BrowseServer(fileName);
+                    break;
+            }
+
+            return await Task.FromResult(true);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             txtRemarks.Focus();
-        }
-
-        private void btnCancel_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (ViewModel?.IsModified == true)
-            {
-                this.DialogResult = true;
-            }
-            else
-            {
-                this.Close();
-            }
         }
     }
 }
